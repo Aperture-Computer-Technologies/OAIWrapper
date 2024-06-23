@@ -42,7 +42,7 @@ client = openai.OpenAI(api_key=openai_api_key)
 # Initialize SQLite database
 def init_db():
     try:
-        conn = sqlite3.connect('data/users.db')
+        conn = sqlite3.connect('data2/users.db')
         cursor = conn.cursor()
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (

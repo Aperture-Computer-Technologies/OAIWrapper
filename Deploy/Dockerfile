@@ -1,8 +1,4 @@
-FROM python:3.9.19-slim
-
-# Create the application user
-RUN groupadd --gid 1000 appuser \
-    && useradd --uid 1000 --gid 1000 -ms /bin/bash appuser
+FROM python:3.12.4
 
 # Upgrade pip and install virtualenv
 RUN pip3 install --no-cache-dir --upgrade \
@@ -15,25 +11,20 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     git
 
-USER appuser
-WORKDIR /home/appuser
+WORKDIR /root
 
-# Clone the repository as appuser
+# Clone the repository as root
 RUN git clone https://github.com/Aperture-Computer-Technologies/OAIWrapper app
 
 # Create and activate a virtual environment, then install dependencies
-ENV VIRTUAL_ENV=/home/appuser/venv
+ENV VIRTUAL_ENV=/root/venv
 RUN virtualenv ${VIRTUAL_ENV}
 RUN . ${VIRTUAL_ENV}/bin/activate && pip install -r app/requirements.txt
 
 EXPOSE 8501
 
-# Switch back to root to set permissions on the run.sh script
-USER root
-COPY run.sh /home/appuser
-RUN chmod +x /home/appuser/run.sh
-
-# Switch back to appuser
-USER appuser
+# Copy and set permissions on the run.sh script
+COPY run.sh /root
+RUN chmod +x /root/run.sh
 
 ENTRYPOINT ["./run.sh"]

@@ -6,7 +6,7 @@ import bcrypt
 # Register a new user
 def register_user(username, name, password):
     try:
-        conn = sqlite3.connect('data/users.db')
+        conn = sqlite3.connect('data2/users.db')
         cursor = conn.cursor()
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         cursor.execute('INSERT INTO users (username, name, password) VALUES (?, ?, ?)', (username, name, hashed_password.decode('utf-8')))
