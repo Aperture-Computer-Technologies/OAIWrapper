@@ -1,3 +1,4 @@
+#app.py
 import openai
 import streamlit as st
 import json
@@ -119,12 +120,80 @@ def main_app():
         st.session_state.current_chat = new_chat_name
         save_chat_sessions(st.session_state.username)
 
+    def delete_chat(chat_name):
+        if chat_name in st.session_state.chat_sessions:
+            del st.session_state.chat_sessions[chat_name]
+            save_chat_sessions(st.session_state.username)
+            if st.session_state.current_chat == chat_name:
+                st.session_state.current_chat = None
+
+    def rename_chat(old_name, new_name):
+        if old_name in st.session_state.chat_sessions and new_name:
+            st.session_state.chat_sessions[new_name] = st.session_state.chat_sessions.pop(old_name)
+            if st.session_state.current_chat == old_name:
+                st.session_state.current_chat = new_name
+            save_chat_sessions(st.session_state.username)
+
+    if 'chat_to_rename' not in st.session_state:
+        st.session_state.chat_to_rename = None
+
+    def trigger_rename(chat_name):
+        st.session_state.chat_to_rename = chat_name
+
+    # Function to render the rename input
+    def render_rename_input():
+        if st.session_state.chat_to_rename:
+            with st.form(key='rename_form'):
+                new_name = st.text_input(f"Rename `{st.session_state.chat_to_rename}` to", st.session_state.chat_to_rename)
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    submit_button = st.form_submit_button(label='Rename')
+                with col2:
+                    cancel_button = st.form_submit_button(label='Cancel')
+
+                if submit_button:
+                    rename_chat(st.session_state.chat_to_rename, new_name)
+                    st.session_state.chat_to_rename = None  # Reset the variable
+                    st.experimental_rerun()  # Refresh the page to reflect changes
+
+                if cancel_button:
+                    st.session_state.chat_to_rename = None
+                    st.experimental_rerun()
+
+    def render_rename_input():
+        if st.session_state.chat_to_rename:
+            with st.form(key='rename_form'):
+                new_name = st.text_input(f"Rename `{st.session_state.chat_to_rename}` to", st.session_state.chat_to_rename)
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    submit_button = st.form_submit_button(label='Rename')
+                with col2:
+                    cancel_button = st.form_submit_button(label='Cancel')
+
+                if submit_button:
+                    rename_chat(st.session_state.chat_to_rename, new_name)
+                    st.session_state.chat_to_rename = None  # Reset the variable
+                    st.experimental_rerun()  # Refresh the page to reflect changes
+
+                if cancel_button:
+                    st.session_state.chat_to_rename = None
+                    st.experimental_rerun()
+
     # Sidebar for chat session management and model switcher
     with st.sidebar:
         st.subheader("Chat Sessions")
-        for chat_name in st.session_state.chat_sessions:
-            if st.button(chat_name):
-                select_chat(chat_name)
+
+        for chat_name in list(st.session_state.chat_sessions.keys()):  # Convert to list to avoid size change issues
+            col1, col2, col3 = st.columns([4, 1, 1])
+            with col1:
+                if st.button(chat_name):
+                    select_chat(chat_name)
+            with col2:
+                if st.button("🗑️", key=f"delete_{chat_name}"):
+                    delete_chat(chat_name)
+            with col3:
+                if st.button("✏️", key=f"rename_{chat_name}"):
+                    trigger_rename(chat_name)
 
         if st.button("New Chat"):
             create_new_chat()
@@ -147,19 +216,26 @@ def main_app():
             st.query_params["page"] = "login"
             st.experimental_rerun()
 
+    # Render the rename input section if needed
+    render_rename_input()
+
     # Display messages of the current chat session
     if st.session_state.current_chat:
         st.subheader(f"Current Chat: {st.session_state.current_chat}")
         messages = st.session_state.chat_sessions[st.session_state.current_chat]
 
         for message in messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+            if message["role"] == "user":
+                with st.chat_message(message["role"]):
+                    st.text(message["content"])  # Render user's message as plain text
+            else:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])  # Render bot's message as markdown
 
         if prompt := st.chat_input("What is up?"):
             messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
-                st.markdown(prompt)
+                st.text(prompt)  # Render user's input as plain text
 
             with st.spinner("Waiting for response..."):
                 with st.chat_message("assistant"):
@@ -177,7 +253,7 @@ def main_app():
                     ):
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
                             response += chunk.choices[0].delta.content
-                            response_container.markdown(response)
+                            response_container.markdown(response)  # Render bot's response as markdown
 
             messages.append({"role": "assistant", "content": response})
             save_chat_sessions(st.session_state.username)
