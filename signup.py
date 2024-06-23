@@ -21,6 +21,7 @@ def register_user(username, name, password):
 
 # Main signup function
 def main_signup():
+    print("main signup")
     st.header("Sign Up")
     new_username = st.text_input("Username", key="signup_username")
     new_name = st.text_input("Full Name", key="signup_name")
@@ -33,12 +34,12 @@ def main_signup():
                 if register_user(new_username, new_name, new_password):
                     st.success("Registration successful! You can now log in.")
                     st.info("Go to the login page to continue.")
-                    st.experimental_set_query_params(page="login")
-                    st.experimental_rerun()
+                    st.query_params["page"] =" login"
+                    st.rerun()
             else:
                 st.error("All fields are required.")
         else:
             st.error("Passwords do not match")
     
     if st.button("Already have an account? Log in"):
-        st.experimental_set_query_params(page="login")
+        st.query_params["page"] = "login"

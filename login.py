@@ -36,11 +36,11 @@ def main_login():
             st.session_state.authentication_status = True
             st.session_state.username = username
             st.session_state.name = name
-            st.experimental_set_query_params(page="app")
-            st.experimental_rerun()
+            st.query_params["page"] = "app"
+            st.rerun()
         else:
             st.session_state.authentication_status = False
             st.error("Username or password is incorrect")
     
     if st.button("New user? Sign up"):
-        st.experimental_set_query_params(page="signup")
+        st.query_params["page"] = "signup"

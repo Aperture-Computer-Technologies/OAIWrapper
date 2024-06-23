@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 
 # Ensure the title is always visible
 st.title("OAIwrapper")
@@ -144,7 +144,7 @@ def main_app():
             st.session_state.authentication_status = None
             st.session_state.username = None
             st.session_state.name = None
-            st.experimental_set_query_params(page="login")
+            st.query_params["page"] = "login"
             st.experimental_rerun()
 
     # Display messages of the current chat session

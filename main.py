@@ -15,18 +15,21 @@ def initialize_session_state():
 # Initialize session state before usage
 initialize_session_state()
 
+if not st.query_params.get_all("page"):
+    st.query_params["page"] = "login"
+    st.rerun()
+
 # Determine the page to load
-query_params = st.experimental_get_query_params()
-page = query_params.get("page", ["login"])[0]
+page = st.query_params.get_all("page")[0]
 
 # Render the appropriate page
 if st.session_state.authentication_status:
-    if page == "signup":
-        st.experimental_set_query_params(page="app")
-        st.experimental_rerun()
+    if st.query_params["page"] == "signup":
+        st.query_params["page"] ="app"
+        st.rerun()
     app.main_app()
 else:
-    if page == "signup":
+    if st.query_params["page"] == "signup":
         signup.main_signup()
     else:
         login.main_login()
