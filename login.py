@@ -1,16 +1,19 @@
-# login.py
 import streamlit as st
 import sqlite3
 import bcrypt
 
 # Fetch user data for authentication
 def fetch_users():
-    conn = sqlite3.connect('user_data.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT username, name, password FROM users')
-    users = cursor.fetchall()
-    conn.close()
-    return {user[0]: {"name": user[1], "password": user[2]} for user in users}
+    try:
+        conn = sqlite3.connect('user_data.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT username, name, password FROM users')
+        users = cursor.fetchall()
+        conn.close()
+        return {user[0]: {"name": user[1], "password": user[2]} for user in users}
+    except sqlite3.Error as e:
+        st.error("Database error: " + str(e))
+        return {}
 
 # Authentication setup
 def authenticate_user(username, password):
@@ -26,17 +29,18 @@ def main_login():
     st.header("Login")
     username = st.text_input("Username", key="login_username")
     password = st.text_input("Password", type="password", key="login_password")
+    
     if st.button("Login"):
         name = authenticate_user(username, password)
         if name:
             st.session_state.authentication_status = True
             st.session_state.username = username
             st.session_state.name = name
-            st.experimental_set_query_params(page="app")  # Redirect to main app
+            st.experimental_set_query_params(page="app")
             st.experimental_rerun()
         else:
             st.session_state.authentication_status = False
             st.error("Username or password is incorrect")
     
     if st.button("New user? Sign up"):
-        st.experimental_set_query_params(page="signup")  # Redirect to signup page
+        st.experimental_set_query_params(page="signup")

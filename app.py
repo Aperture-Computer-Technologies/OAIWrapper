@@ -1,4 +1,3 @@
-# app.py
 import openai
 import streamlit as st
 import json
@@ -37,17 +36,21 @@ client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Initialize SQLite database
 def init_db():
-    conn = sqlite3.connect('user_data.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        password TEXT NOT NULL
-    )
-    ''')
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect('user_data.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            password TEXT NOT NULL
+        )
+        ''')
+        conn.commit()
+        conn.close()
+    except sqlite3.Error as e:
+        logger.error("Database error: " + str(e))
+        st.error("Database initialization failed.")
 
 # Call the function to initialize the database
 init_db()
@@ -114,7 +117,7 @@ def main_app():
         new_chat_name = f"Chat {len(st.session_state.chat_sessions) + 1}"
         st.session_state.chat_sessions[new_chat_name] = []
         st.session_state.current_chat = new_chat_name
-        save_chat_sessions(st.session_state.username)  # Save immediately when creating a new chat
+        save_chat_sessions(st.session_state.username)
 
     # Sidebar for chat session management and model switcher
     with st.sidebar:
@@ -135,9 +138,8 @@ def main_app():
         if selected_model != st.session_state.openai_model:
             st.session_state.openai_model = selected_model
             logger.info(f"Model switched to: {st.session_state.openai_model}")
-            save_chat_sessions(st.session_state.username)  # Save session with the new model
+            save_chat_sessions(st.session_state.username)
 
-        # Move the logout button to the sidebar
         if st.button("Logout", key="logout"):
             st.session_state.authentication_status = None
             st.session_state.username = None
@@ -161,12 +163,12 @@ def main_app():
 
             with st.spinner("Waiting for response..."):
                 with st.chat_message("assistant"):
-                    response_container = st.empty()  # Placeholder for the response
+                    response_container = st.empty()
                     response = ""
 
                     logger.info(f"Generating response using model: {st.session_state.openai_model}")
                     for chunk in client.chat.completions.create(
-                        model=st.session_state.openai_model,  # Use selected model
+                        model=st.session_state.openai_model,
                         messages=[
                             {"role": m["role"], "content": m["content"]}
                             for m in messages
@@ -175,9 +177,9 @@ def main_app():
                     ):
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
                             response += chunk.choices[0].delta.content
-                            response_container.markdown(response)  # Update the response incrementally
+                            response_container.markdown(response)
 
             messages.append({"role": "assistant", "content": response})
-            save_chat_sessions(st.session_state.username)  # Save chat session after receiving response
+            save_chat_sessions(st.session_state.username)
     else:
         st.write("No chat session selected.")
