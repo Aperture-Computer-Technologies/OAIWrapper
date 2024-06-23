@@ -162,3 +162,6 @@ cython_debug/
 #.idea/
 
 *secret*
+*session*
+*user_data*
+*chat_sessions*

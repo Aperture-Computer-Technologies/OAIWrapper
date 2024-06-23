@@ -3,6 +3,8 @@ import streamlit as st
 import json
 import os
 import logging
+import sqlite3
+import bcrypt
 
 # Configure logging
 logging.basicConfig(
@@ -21,102 +23,158 @@ st.title("OAIwrapper")
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# Define file paths
-SAVE_DIR = "chat_sessions"
-SAVE_FILE = os.path.join(SAVE_DIR, "sessions.json")
+# Initialize SQLite database
+def init_db():
+    conn = sqlite3.connect('user_data.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        password TEXT NOT NULL
+    )
+    ''')
+    conn.commit()
+    conn.close()
 
-# Load chat sessions from file
-def load_chat_sessions():
-    if os.path.exists(SAVE_FILE):
-        with open(SAVE_FILE, "r") as f:
+# Call the function to initialize the database
+init_db()
+
+# User-specific chat session paths
+def get_user_data_dir(username):
+    return os.path.join("user_data", username)
+
+def get_user_chat_file(username):
+    return os.path.join(get_user_data_dir(username), "sessions.json")
+
+# Load chat sessions for the logged-in user
+def load_chat_sessions(username):
+    save_file = get_user_chat_file(username)
+    if os.path.exists(save_file):
+        with open(save_file, "r") as f:
             data = json.load(f)
-            st.session_state.openai_model = data.get("selected_model", "gpt-3.5-turbo")  # Load model
+            st.session_state.openai_model = data.get("selected_model", "gpt-3.5-turbo")
             return data.get("sessions", {})
     return {}
 
-# Save chat sessions to file
-def save_chat_sessions():
-    if not os.path.exists(SAVE_DIR):
-        os.makedirs(SAVE_DIR)
+# Save chat sessions for the logged-in user
+def save_chat_sessions(username):
+    save_file = get_user_chat_file(username)
     data = {
         "sessions": st.session_state.chat_sessions,
-        "selected_model": st.session_state.openai_model,  # Save model
+        "selected_model": st.session_state.openai_model,
     }
-    with open(SAVE_FILE, "w") as f:
+    if not os.path.exists(get_user_data_dir(username)):
+        os.makedirs(get_user_data_dir(username))
+    with open(save_file, "w") as f:
         json.dump(data, f, indent=4)
-    logger.info(f"Chat sessions saved. Current model: {st.session_state.openai_model}")
+    logger.info(f"Chat sessions saved for user {username}. Current model: {st.session_state.openai_model}")
 
-# Initialize chat sessions and other state variables
-if "chat_sessions" not in st.session_state:
-    st.session_state.chat_sessions = load_chat_sessions()
-if "current_chat" not in st.session_state:
-    st.session_state.current_chat = None
-if "openai_model" not in st.session_state:
-    st.session_state.openai_model = "gpt-3.5-turbo"  # Default, but will be loaded from file
+# Initialize session state variables
+def initialize_session_state():
+    if "authentication_status" not in st.session_state:
+        st.session_state.authentication_status = None
+    if "username" not in st.session_state:
+        st.session_state.username = None
+    if "name" not in st.session_state:
+        st.session_state.name = None
 
-def select_chat(chat_name):
-    st.session_state.current_chat = chat_name
+# Main app logic
+def main_app():
+    st.write(f"Welcome {st.session_state.name}!")
 
-def create_new_chat():
-    new_chat_name = f"Chat {len(st.session_state.chat_sessions) + 1}"
-    st.session_state.chat_sessions[new_chat_name] = []
-    st.session_state.current_chat = new_chat_name
-    save_chat_sessions()  # Save immediately when creating a new chat
+    user_data_dir = get_user_data_dir(st.session_state.username)
+    if not os.path.exists(user_data_dir):
+        os.makedirs(user_data_dir)
 
-# Sidebar for chat session management and model switcher
-with st.sidebar:
-    st.subheader("Chat Sessions")
-    for chat_name in st.session_state.chat_sessions:
-        if st.button(chat_name):
-            select_chat(chat_name)
+    # Initialize chat sessions and other state variables
+    if "chat_sessions" not in st.session_state:
+        st.session_state.chat_sessions = load_chat_sessions(st.session_state.username)
+    if "current_chat" not in st.session_state:
+        st.session_state.current_chat = None
+    if "openai_model" not in st.session_state:
+        st.session_state.openai_model = "gpt-3.5-turbo"
 
-    if st.button("New Chat"):
-        create_new_chat()
+    def select_chat(chat_name):
+        st.session_state.current_chat = chat_name
 
-    st.subheader("Model Switcher")
-    selected_model = st.selectbox(
-        "Choose the OpenAI model:",
-        ["gpt-3.5-turbo", "gpt-4o", "gpt-4-turbo"],
-        index=["gpt-3.5-turbo", "gpt-4o", "gpt-4-turbo"].index(st.session_state.openai_model)
-    )
-    if selected_model != st.session_state.openai_model:
-        st.session_state.openai_model = selected_model
-        logger.info(f"Model switched to: {st.session_state.openai_model}")
-        save_chat_sessions()  # Save session with the new model
+    def create_new_chat():
+        new_chat_name = f"Chat {len(st.session_state.chat_sessions) + 1}"
+        st.session_state.chat_sessions[new_chat_name] = []
+        st.session_state.current_chat = new_chat_name
+        save_chat_sessions(st.session_state.username)  # Save immediately when creating a new chat
 
-# Display messages of the current chat session
-if st.session_state.current_chat:
-    st.subheader(f"Current Chat: {st.session_state.current_chat}")
-    messages = st.session_state.chat_sessions[st.session_state.current_chat]
+    # Sidebar for chat session management and model switcher
+    with st.sidebar:
+        st.subheader("Chat Sessions")
+        for chat_name in st.session_state.chat_sessions:
+            if st.button(chat_name):
+                select_chat(chat_name)
 
-    for message in messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        if st.button("New Chat"):
+            create_new_chat()
 
-    if prompt := st.chat_input("What is up?"):
-        messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        st.subheader("Model Switcher")
+        selected_model = st.selectbox(
+            "Choose the OpenAI model:",
+            ["gpt-3.5-turbo", "gpt-4o", "gpt-4-turbo"],
+            index=["gpt-3.5-turbo", "gpt-4o", "gpt-4-turbo"].index(st.session_state.openai_model)
+        )
+        if selected_model != st.session_state.openai_model:
+            st.session_state.openai_model = selected_model
+            logger.info(f"Model switched to: {st.session_state.openai_model}")
+            save_chat_sessions(st.session_state.username)  # Save session with the new model
 
-        with st.spinner("Waiting for response..."):
-            with st.chat_message("assistant"):
-                response_container = st.empty()  # Placeholder for the response
-                response = ""
+    # Display messages of the current chat session
+    if st.session_state.current_chat:
+        st.subheader(f"Current Chat: {st.session_state.current_chat}")
+        messages = st.session_state.chat_sessions[st.session_state.current_chat]
 
-                logger.info(f"Generating response using model: {st.session_state.openai_model}")
-                for chunk in client.chat.completions.create(
-                    model=st.session_state.openai_model,  # Use selected model
-                    messages=[
-                        {"role": m["role"], "content": m["content"]}
-                        for m in messages
-                    ],
-                    stream=True,
-                ):
-                    if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
-                        response += chunk.choices[0].delta.content
-                        response_container.markdown(response)  # Update the response incrementally
+        for message in messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-        messages.append({"role": "assistant", "content": response})
-        save_chat_sessions()  # Save chat session after receiving response
+        if prompt := st.chat_input("What is up?"):
+            messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.spinner("Waiting for response..."):
+                with st.chat_message("assistant"):
+                    response_container = st.empty()  # Placeholder for the response
+                    response = ""
+
+                    logger.info(f"Generating response using model: {st.session_state.openai_model}")
+                    for chunk in client.chat.completions.create(
+                        model=st.session_state.openai_model,  # Use selected model
+                        messages=[
+                            {"role": m["role"], "content": m["content"]}
+                            for m in messages
+                        ],
+                        stream=True,
+                    ):
+                        if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
+                            response += chunk.choices[0].delta.content
+                            response_container.markdown(response)  # Update the response incrementally
+
+            messages.append({"role": "assistant", "content": response})
+            save_chat_sessions(st.session_state.username)  # Save chat session after receiving response
+    else:
+        st.write("No chat session selected.")
+
+    if st.button("Logout", key="logout"):
+        st.session_state.authentication_status = None
+        st.session_state.username = None
+        st.session_state.name = None
+        st.query_params.update(page="login")
+        st.experimental_rerun()
+
+# Initialize session state before checking authentication status
+initialize_session_state()
+
+# Authentication check
+if st.session_state.authentication_status:
+    main_app()
 else:
-    st.write("No chat session selected.")
+    st.query_params.update(page="login")
+    st.write("Please log in through the 'Login' page.")
