@@ -62,7 +62,7 @@ init_db()
 
 # User-specific chat session paths
 def get_user_data_dir(username):
-    return os.path.join("data/user_data", username)
+    return os.path.join("/home/appuser/data/user_data", username)
 
 def get_user_chat_file(username):
     return os.path.join(get_user_data_dir(username), "sessions.json")
