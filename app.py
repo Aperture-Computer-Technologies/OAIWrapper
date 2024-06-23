@@ -33,7 +33,11 @@ if "authentication_status" not in st.session_state or not st.session_state.authe
         unsafe_allow_html=True,
     )
 
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# Access environment variable
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# Use the API key with OpenAI client
+client = openai.OpenAI(api_key=openai_api_key)
 
 # Initialize SQLite database
 def init_db():
@@ -197,6 +201,7 @@ def main_app():
 
         if st.button("New Chat"):
             create_new_chat()
+            st.rerun()
 
         st.subheader("Model Switcher")
         selected_model = st.selectbox(
@@ -214,7 +219,7 @@ def main_app():
             st.session_state.username = None
             st.session_state.name = None
             st.query_params["page"] = "login"
-            st.experimental_rerun()
+            st.rerun()
 
     # Render the rename input section if needed
     render_rename_input()
