@@ -15,9 +15,10 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     git
 
+USER appuser
 WORKDIR /home/appuser
 
-# Clone the repository as root
+# Clone the repository as appuser
 RUN git clone https://github.com/Aperture-Computer-Technologies/OAIWrapper app
 
 # Create and activate a virtual environment, then install dependencies
@@ -27,8 +28,12 @@ RUN . ${VIRTUAL_ENV}/bin/activate && pip install -r app/requirements.txt
 
 EXPOSE 8501
 
-# Copy and set permissions on the run.sh script
+# Switch back to root to set permissions on the run.sh script
+USER root
 COPY run.sh /home/appuser
 RUN chmod +x /home/appuser/run.sh
+
+# Switch back to appuser
+USER appuser
 
 ENTRYPOINT ["./run.sh"]
