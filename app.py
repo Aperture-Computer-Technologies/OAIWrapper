@@ -1,10 +1,10 @@
-from openai import OpenAI
+# app.py
+import openai
 import streamlit as st
 import json
 import os
 import logging
 import sqlite3
-import bcrypt
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +33,7 @@ if "authentication_status" not in st.session_state or not st.session_state.authe
         unsafe_allow_html=True,
     )
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # Initialize SQLite database
 def init_db():
@@ -142,7 +142,7 @@ def main_app():
             st.session_state.authentication_status = None
             st.session_state.username = None
             st.session_state.name = None
-            st.query_params.update(page="login")
+            st.experimental_set_query_params(page="login")
             st.experimental_rerun()
 
     # Display messages of the current chat session
@@ -181,23 +181,3 @@ def main_app():
             save_chat_sessions(st.session_state.username)  # Save chat session after receiving response
     else:
         st.write("No chat session selected.")
-
-# Initialize session state before checking authentication status
-initialize_session_state()
-
-# Determine the page to load
-query_params = st.query_params
-page = query_params.get("page", ["login"])[0]
-
-# Render the appropriate page
-if st.session_state.authentication_status:
-    if page != "main":
-        st.query_params.update(page="main")
-        st.experimental_rerun()
-    else:
-        main_app()
-else:
-    if page == "login":
-        st.write("Please log in through the 'Login' page.")
-    elif page == "signup":
-        st.write("Please sign up through the 'Sign Up' page.")
