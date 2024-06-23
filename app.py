@@ -42,7 +42,7 @@ client = openai.OpenAI(api_key=openai_api_key)
 # Initialize SQLite database
 def init_db():
     try:
-        conn = sqlite3.connect('user_data.db')
+        conn = sqlite3.connect('data/users.db')
         cursor = conn.cursor()
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -62,7 +62,7 @@ init_db()
 
 # User-specific chat session paths
 def get_user_data_dir(username):
-    return os.path.join("user_data", username)
+    return os.path.join("data/user_data", username)
 
 def get_user_chat_file(username):
     return os.path.join(get_user_data_dir(username), "sessions.json")

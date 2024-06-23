@@ -6,7 +6,7 @@ import bcrypt
 # Fetch user data for authentication
 def fetch_users():
     try:
-        conn = sqlite3.connect('user_data.db')
+        conn = sqlite3.connect('data/users.db')
         cursor = conn.cursor()
         cursor.execute('SELECT username, name, password FROM users')
         users = cursor.fetchall()

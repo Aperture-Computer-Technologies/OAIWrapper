@@ -164,4 +164,5 @@ cython_debug/
 *secret*
 *session*
 *user_data*
+*data*
 *chat_sessions*
