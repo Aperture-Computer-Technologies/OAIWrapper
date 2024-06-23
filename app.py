@@ -19,7 +19,19 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(layout="wide")
 
+# Ensure the title is always visible
 st.title("OAIwrapper")
+
+# Hide the sidebar if not authenticated
+if "authentication_status" not in st.session_state or not st.session_state.authentication_status:
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"] {display: none;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
@@ -125,6 +137,14 @@ def main_app():
             logger.info(f"Model switched to: {st.session_state.openai_model}")
             save_chat_sessions(st.session_state.username)  # Save session with the new model
 
+        # Move the logout button to the sidebar
+        if st.button("Logout", key="logout"):
+            st.session_state.authentication_status = None
+            st.session_state.username = None
+            st.session_state.name = None
+            st.query_params.update(page="login")
+            st.experimental_rerun()
+
     # Display messages of the current chat session
     if st.session_state.current_chat:
         st.subheader(f"Current Chat: {st.session_state.current_chat}")
@@ -162,19 +182,22 @@ def main_app():
     else:
         st.write("No chat session selected.")
 
-    if st.button("Logout", key="logout"):
-        st.session_state.authentication_status = None
-        st.session_state.username = None
-        st.session_state.name = None
-        st.query_params.update(page="login")
-        st.experimental_rerun()
-
 # Initialize session state before checking authentication status
 initialize_session_state()
 
-# Authentication check
+# Determine the page to load
+query_params = st.query_params
+page = query_params.get("page", ["login"])[0]
+
+# Render the appropriate page
 if st.session_state.authentication_status:
-    main_app()
+    if page != "main":
+        st.query_params.update(page="main")
+        st.experimental_rerun()
+    else:
+        main_app()
 else:
-    st.query_params.update(page="login")
-    st.write("Please log in through the 'Login' page.")
+    if page == "login":
+        st.write("Please log in through the 'Login' page.")
+    elif page == "signup":
+        st.write("Please sign up through the 'Sign Up' page.")
