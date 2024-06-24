@@ -246,12 +246,12 @@ def main_app():
                 value=st.session_state.get("temperature", 1.0),
                 step=0.01
             )
-            if temperature != st.session_state.temperature:
-                st.session_state.temperature = temperature
-                if st.session_state.current_chat:
-                    st.session_state.chat_sessions[st.session_state.current_chat]["temperature"] = temperature
-                    save_chat_sessions(st.session_state.username)
-            
+            # if temperature != st.session_state.temperature:
+            st.session_state.temperature = temperature
+            if st.session_state.current_chat:
+                st.session_state.chat_sessions[st.session_state.current_chat]["temperature"] = temperature
+                save_chat_sessions(st.session_state.username)
+        
             max_tokens = st.slider(
                 "Maximum Tokens",
                 min_value=1,
@@ -357,7 +357,7 @@ def main_app():
     else:
         st.write("No chat session selected.")
 
-if __name__ == "__main__":
+if __name__ == "__app__":
     initialize_session_state()
     if st.session_state.authentication_status:
         main_app()
