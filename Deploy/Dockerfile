@@ -19,7 +19,7 @@ USER appuser
 WORKDIR /home/appuser
 
 # Clone the repository as appuser
-RUN git clone https://github.com/Aperture-Computer-Technologies/OAIWrapper app
+RUN git clone https://github.com/Aperture-Computer-Technologies/Synapse app
 
 # Create and activate a virtual environment, then install dependencies
 ENV VIRTUAL_ENV=/home/appuser/venv
