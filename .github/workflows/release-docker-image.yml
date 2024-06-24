@@ -19,3 +19,9 @@ jobs:
 
       - name: Push Docker Image to Harbor
         run: docker push registry.eu.aperturect.com/library/synapse:${{ github.event.release.tag_name }}
+
+      - name: Tag Docker Image as latest for Harbor
+        run: docker tag registry.eu.aperturect.com/library/synapse:${{ github.event.release.tag_name }} registry.eu.aperturect.com/library/synapse:latest
+
+      - name: Push Docker Image (latest) to Harbor
+        run: docker push registry.eu.aperturect.com/library/synapse:latest
