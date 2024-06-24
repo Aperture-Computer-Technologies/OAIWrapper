@@ -14,13 +14,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker Image
-        run: docker build -t synapse:dev ./Deploy
+        run: docker build -t synapse:dev --platform linux/amd64 ./Deploy
 
       - name: Log in to Harbor
         run: echo "${{ secrets.HARBOR_PASSWORD }}" | docker login https://registry.eu.aperturect.com --username "${{ vars.HARBOR_USERNAME }}" --password-stdin
-
-      - name: Tag Docker Image for Harbor
-        run: docker tag synapse:dev https://registry.eu.aperturect.com/library/synapse:dev
 
       - name: Push Docker Image to Harbor
         run: docker push https://registry.eu.aperturect.com/library/synapse:dev
