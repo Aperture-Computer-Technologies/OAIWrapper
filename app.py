@@ -357,6 +357,7 @@ def main_app():
             if response:
                 messages.append({"role": "assistant", "content": response})
                 save_chat_sessions(st.session_state.username)
+                st.rerun()
     else:
         st.write("No chat session selected.")
 
