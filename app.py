@@ -344,6 +344,9 @@ def main_app():
                         if stop_button_pressed:
                             logger.info("Generation stopped by user.")
                             stop_button_pressed = False  # Reset the state for next use
+                            messages.append({"role": "assistant", "content": response})
+                            save_chat_sessions(st.session_state.username)
+                            st.rerun()
                             break
 
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
