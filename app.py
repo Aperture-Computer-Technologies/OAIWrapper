@@ -207,6 +207,17 @@ def main_app():
             st.session_state.username = None
             st.session_state.name = None
 
+        # Advanced options expander
+        with st.expander("Advanced Options"):
+            st.subheader("Model Parameters")
+            st.session_state.temperature = st.slider(
+                "Temperature",
+                min_value=0.0,
+                max_value=2.0,
+                value=st.session_state.get("temperature", 1.0),
+                step=0.1
+            )
+
     # Render the rename input section if needed
     render_rename_input()
 
@@ -240,6 +251,8 @@ def main_app():
                             {"role": m["role"], "content": m["content"]}
                             for m in messages
                         ],
+                        # The temperature parameter is passed here
+                        temperature=st.session_state.get("temperature", 1.0),
                         stream=True,
                     ):
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
