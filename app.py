@@ -360,10 +360,3 @@ def main_app():
                 st.rerun()
     else:
         st.write("No chat session selected.")
-
-if __name__ == "__app__":
-    initialize_session_state()
-    if st.session_state.authentication_status:
-        main_app()
-    else:
-        st.write("Please log in to access the chat.")
