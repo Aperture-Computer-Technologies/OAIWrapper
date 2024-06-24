@@ -321,7 +321,7 @@ def main_app():
     else:
         st.write("No chat session selected.")
 
-if __name__ == "__app__":
+if __name__ == "__main__":
     initialize_session_state()
     if st.session_state.authentication_status:
         main_app()
