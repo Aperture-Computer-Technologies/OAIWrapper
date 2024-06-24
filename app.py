@@ -128,8 +128,6 @@ def initialize_session_state():
     if "frequency_penalty" not in st.session_state:
         st.session_state.frequency_penalty = 0.0
 
-initialize_session_state()
-
 # Callbacks for chat session actions
 def select_chat(chat_name):
     st.session_state.current_chat = chat_name
@@ -202,6 +200,8 @@ def main_app():
         st.session_state.current_chat = None
     if "selected_model" not in st.session_state:
         st.session_state.selected_model = "gpt-3.5-turbo"
+    if "chat_to_rename" not in st.session_state:
+        st.session_state.chat_to_rename = None
 
     # Sidebar for chat session management and model switcher
     with st.sidebar:
