@@ -15,7 +15,7 @@ jobs:
         
       # Add a debug step to check if secrets are correctly being used
       - name: Print HARBOR_USERNAME (debug only, remove after verification)
-        run: echo "${{ variables.HARBOR_USERNAME }}"
+        run: echo "${{ env.HARBOR_USERNAME }}"
         # Add a debug step to check if secrets are correctly being used
       - name: Print HARBOR_PW (debug only, remove after verification)
         run: echo "${{ secrets.HARBOR_PASSWORD }}"
