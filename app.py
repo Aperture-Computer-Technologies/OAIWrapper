@@ -259,11 +259,11 @@ def main_app():
                 value=st.session_state.get("max_tokens", 256),
                 step=1
             )
-            if max_tokens != st.session_state.max_tokens:
-                st.session_state.max_tokens = max_tokens
-                if st.session_state.current_chat:
-                    st.session_state.chat_sessions[st.session_state.current_chat]["max_tokens"] = max_tokens
-                    save_chat_sessions(st.session_state.username)
+            # if max_tokens != st.session_state.max_tokens:
+            st.session_state.max_tokens = max_tokens
+            if st.session_state.current_chat:
+                st.session_state.chat_sessions[st.session_state.current_chat]["max_tokens"] = max_tokens
+                save_chat_sessions(st.session_state.username)
             
             top_p = st.slider(
                 "Top P",
@@ -272,11 +272,11 @@ def main_app():
                 value=st.session_state.get("top_p", 1.0),
                 step=0.01
             )
-            if top_p != st.session_state.top_p:
-                st.session_state.top_p = top_p
-                if st.session_state.current_chat:
-                    st.session_state.chat_sessions[st.session_state.current_chat]["top_p"] = top_p
-                    save_chat_sessions(st.session_state.username)
+            # if top_p != st.session_state.top_p:
+            st.session_state.top_p = top_p
+            if st.session_state.current_chat:
+                st.session_state.chat_sessions[st.session_state.current_chat]["top_p"] = top_p
+                save_chat_sessions(st.session_state.username)
             
             frequency_penalty = st.slider(
                 "Frequency Penalty",
@@ -285,11 +285,11 @@ def main_app():
                 value=st.session_state.get("frequency_penalty", 0.0),
                 step=0.01
             )
-            if frequency_penalty != st.session_state.frequency_penalty:
-                st.session_state.frequency_penalty = frequency_penalty
-                if st.session_state.current_chat:
-                    st.session_state.chat_sessions[st.session_state.current_chat]["frequency_penalty"] = frequency_penalty
-                    save_chat_sessions(st.session_state.username)
+            # if frequency_penalty != st.session_state.frequency_penalty:
+            st.session_state.frequency_penalty = frequency_penalty
+            if st.session_state.current_chat:
+                st.session_state.chat_sessions[st.session_state.current_chat]["frequency_penalty"] = frequency_penalty
+                save_chat_sessions(st.session_state.username)
 
     # Render the rename input section if needed
     render_rename_input()
