@@ -1,0 +1,26 @@
+name: Harbor Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t oaiwrapper:dev ./Deploy
+
+      - name: Log in to Harbor
+        run: echo "$HARBOR_PASSWORD" | docker login https://registry.eu.aperturect.com -u "$HARBOR_USERNAME" --password-stdin
+
+      - name: Tag Docker Image for Harbor
+        run: docker tag oaiwrapper:dev https://registry.eu.aperturect.com/library/oaiwrapper:dev
+
+      - name: Push Docker Image to Harbor
+        run: docker push https://registry.eu.aperturect.com/library/oaiwrapper:dev
