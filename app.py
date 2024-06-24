@@ -80,7 +80,11 @@ def load_chat_sessions(username):
                 elif "messages" not in session or "selected_model" not in session:
                     sessions[chat_name] = {
                         "messages": session.get("messages", []) if isinstance(session.get("messages", []), list) else [],
-                        "selected_model": session.get("selected_model", "gpt-3.5-turbo")
+                        "selected_model": session.get("selected_model", "gpt-3.5-turbo"),
+                        "temperature": session.get("temperature", 1.0),
+                        "max_tokens": session.get("max_tokens", 256),
+                        "top_p": session.get("top_p", 1.0),
+                        "frequency_penalty": session.get("frequency_penalty", 0.0)
                     }
             return sessions
     return {}
@@ -131,12 +135,20 @@ def select_chat(chat_name):
     st.session_state.current_chat = chat_name
     chat_data = st.session_state.chat_sessions.get(chat_name, {})
     st.session_state.selected_model = chat_data.get("selected_model", "gpt-3.5-turbo")
+    st.session_state.temperature = chat_data.get("temperature", 1.0)
+    st.session_state.max_tokens = chat_data.get("max_tokens", 256)
+    st.session_state.top_p = chat_data.get("top_p", 1.0)
+    st.session_state.frequency_penalty = chat_data.get("frequency_penalty", 0.0)
 
 def create_new_chat():
     new_chat_name = f"Chat {len(st.session_state.chat_sessions) + 1}"
     st.session_state.chat_sessions[new_chat_name] = {
         "messages": [],
-        "selected_model": "gpt-3.5-turbo"
+        "selected_model": "gpt-3.5-turbo",
+        "temperature": 1.0,
+        "max_tokens": 256,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0
     }
     st.session_state.current_chat = new_chat_name
     save_chat_sessions(st.session_state.username)
@@ -227,34 +239,58 @@ def main_app():
         # Advanced options expander
         with st.expander("Advanced Options"):
             st.subheader("Model Parameters")
-            st.session_state.temperature = st.slider(
+            temperature = st.slider(
                 "Temperature",
                 min_value=0.0,
                 max_value=2.0,
                 value=st.session_state.get("temperature", 1.0),
                 step=0.01
             )
-            st.session_state.max_tokens = st.slider(
+            if temperature != st.session_state.temperature:
+                st.session_state.temperature = temperature
+                if st.session_state.current_chat:
+                    st.session_state.chat_sessions[st.session_state.current_chat]["temperature"] = temperature
+                    save_chat_sessions(st.session_state.username)
+            
+            max_tokens = st.slider(
                 "Maximum Tokens",
                 min_value=1,
                 max_value=4095,
                 value=st.session_state.get("max_tokens", 256),
                 step=1
             )
-            st.session_state.top_p = st.slider(
+            if max_tokens != st.session_state.max_tokens:
+                st.session_state.max_tokens = max_tokens
+                if st.session_state.current_chat:
+                    st.session_state.chat_sessions[st.session_state.current_chat]["max_tokens"] = max_tokens
+                    save_chat_sessions(st.session_state.username)
+            
+            top_p = st.slider(
                 "Top P",
                 min_value=0.0,
                 max_value=1.0,
                 value=st.session_state.get("top_p", 1.0),
                 step=0.01
             )
-            st.session_state.frequency_penalty = st.slider(
+            if top_p != st.session_state.top_p:
+                st.session_state.top_p = top_p
+                if st.session_state.current_chat:
+                    st.session_state.chat_sessions[st.session_state.current_chat]["top_p"] = top_p
+                    save_chat_sessions(st.session_state.username)
+            
+            frequency_penalty = st.slider(
                 "Frequency Penalty",
                 min_value=-2.0,
                 max_value=2.0,
                 value=st.session_state.get("frequency_penalty", 0.0),
                 step=0.01
             )
+            if frequency_penalty != st.session_state.frequency_penalty:
+                st.session_state.frequency_penalty = frequency_penalty
+                if st.session_state.current_chat:
+                    st.session_state.chat_sessions[st.session_state.current_chat]["frequency_penalty"] = frequency_penalty
+                    save_chat_sessions(st.session_state.username)
+
     # Render the rename input section if needed
     render_rename_input()
 
