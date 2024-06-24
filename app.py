@@ -105,6 +105,26 @@ def initialize_session_state():
         st.session_state.username = None
     if "name" not in st.session_state:
         st.session_state.name = None
+    if "stop_generation" not in st.session_state:
+        st.session_state.stop_generation = False
+    if "chat_sessions" not in st.session_state:
+        st.session_state.chat_sessions = {}
+    if "current_chat" not in st.session_state:
+        st.session_state.current_chat = None
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = "gpt-3.5-turbo"
+    if "chat_to_rename" not in st.session_state:
+        st.session_state.chat_to_rename = None
+    if "temperature" not in st.session_state:
+        st.session_state.temperature = 1.0
+    if "max_tokens" not in st.session_state:
+        st.session_state.max_tokens = 256
+    if "top_p" not in st.session_state:
+        st.session_state.top_p = 1.0
+    if "frequency_penalty" not in st.session_state:
+        st.session_state.frequency_penalty = 0.0
+
+initialize_session_state()
 
 # Callbacks for chat session actions
 def select_chat(chat_name):
@@ -134,9 +154,6 @@ def rename_chat(old_name, new_name):
         if st.session_state.current_chat == old_name:
             st.session_state.current_chat = new_name
         save_chat_sessions(st.session_state.username)
-
-if 'chat_to_rename' not in st.session_state:
-    st.session_state.chat_to_rename = None
 
 def trigger_rename(chat_name):
     st.session_state.chat_to_rename = chat_name
@@ -215,9 +232,29 @@ def main_app():
                 min_value=0.0,
                 max_value=2.0,
                 value=st.session_state.get("temperature", 1.0),
-                step=0.1
+                step=0.01
             )
-
+            st.session_state.max_tokens = st.slider(
+                "Maximum Tokens",
+                min_value=1,
+                max_value=4095,
+                value=st.session_state.get("max_tokens", 256),
+                step=1
+            )
+            st.session_state.top_p = st.slider(
+                "Top P",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state.get("top_p", 1.0),
+                step=0.01
+            )
+            st.session_state.frequency_penalty = st.slider(
+                "Frequency Penalty",
+                min_value=-2.0,
+                max_value=2.0,
+                value=st.session_state.get("frequency_penalty", 0.0),
+                step=0.01
+            )
     # Render the rename input section if needed
     render_rename_input()
 
@@ -244,27 +281,47 @@ def main_app():
                     response_container = st.empty()
                     response = ""
 
+                    # Add stop button
+                    stop_button_pressed = False
+
+                    def stop_button_callback():
+                        nonlocal stop_button_pressed
+                        stop_button_pressed = True
+
+                    st.button("Stop", key="stop_button", on_click=stop_button_callback)
+
                     logger.info(f"Generating response using model: {st.session_state.selected_model}")
+
                     for chunk in client.chat.completions.create(
                         model=st.session_state.selected_model,
                         messages=[
                             {"role": m["role"], "content": m["content"]}
                             for m in messages
                         ],
-                        # The temperature parameter is passed here
+                        # Parameters are passed here from session state
                         temperature=st.session_state.get("temperature", 1.0),
+                        max_tokens=st.session_state.get("max_tokens", 256),
+                        top_p=st.session_state.get("top_p", 1.0),
+                        frequency_penalty=st.session_state.get("frequency_penalty", 0),
                         stream=True,
                     ):
+                        if stop_button_pressed:
+                            logger.info("Generation stopped by user.")
+                            stop_button_pressed = False  # Reset the state for next use
+                            break
+
                         if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content is not None:
                             response += chunk.choices[0].delta.content
                             response_container.markdown(response)  # Render bot's response as markdown
 
-            messages.append({"role": "assistant", "content": response})
-            save_chat_sessions(st.session_state.username)
+            # Save the response (partially or fully generated) if it exists
+            if response:
+                messages.append({"role": "assistant", "content": response})
+                save_chat_sessions(st.session_state.username)
     else:
         st.write("No chat session selected.")
 
-if __name__ == "__main__":
+if __name__ == "__app__":
     initialize_session_state()
     if st.session_state.authentication_status:
         main_app()
