@@ -256,7 +256,7 @@ def main_app():
                 "Maximum Tokens",
                 min_value=1,
                 max_value=4095,
-                value=st.session_state.get("max_tokens", 256),
+                value=st.session_state.get("max_tokens", 4095),
                 step=1
             )
             # if max_tokens != st.session_state.max_tokens:
@@ -336,7 +336,7 @@ def main_app():
                         ],
                         # Parameters are passed here from session state
                         temperature=st.session_state.get("temperature", 1.0),
-                        max_tokens=st.session_state.get("max_tokens", 256),
+                        max_tokens=st.session_state.get("max_tokens", 4095),
                         top_p=st.session_state.get("top_p", 1.0),
                         frequency_penalty=st.session_state.get("frequency_penalty", 0),
                         stream=True,
